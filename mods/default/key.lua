@@ -37,8 +37,27 @@ minetest.register_tool("default:key", {
 		end
 
 		return nil
+	end,
+	on_secondary_use = function(itemstack, user, pointed_thing)
+		minetest.show_formspec(
+			user:get_player_name(),
+			"default:rename_key",
+			string.format("field[keyname;%s;%s]", S("Key name"), itemstack:get_meta():get_string("description"))
+		)
 	end
 })
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	if formname ~= "default:rename_key" or not fields.keyname then
+		return
+	end
+	
+	local item = player:get_wielded_item()
+	if minetest.get_item_group(item:get_name(), "key") == 1 then
+		item:get_meta():set_string("description", fields.keyname)
+		player:set_wielded_item(item)
+	end
+end)
 
 minetest.register_craftitem("default:skeleton_key", {
 	description = S("Skeleton Key"),
@@ -79,6 +98,7 @@ minetest.register_craftitem("default:skeleton_key", {
 			local new_stack = ItemStack("default:key")
 			local meta = new_stack:get_meta()
 			meta:set_string("secret", secret)
+			meta:set_string("owner", user:get_player_name())
 			meta:set_string("description", S("Key to @1's @2", user:get_player_name(),
 				minetest.registered_nodes[node.name].description))
 
